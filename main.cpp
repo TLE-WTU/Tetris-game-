@@ -100,13 +100,13 @@ void draw() {
     for (int i = 0; i < H; i++) {
         for (int j = 0; j < W; j++) {
             if (board[i][j] == '#') {
-                cout << "##"; 
+                cout << "##";
             }
             else if (board[i][j] == ' ') {
-                cout << "  "; 
+                cout << "  ";
             }
             else {
-                cout << "[]"; 
+                cout << "[]";
             }
         }
         cout << endl;
@@ -122,6 +122,20 @@ bool canMove(int dx, int dy) {
                 if (board[ty][tx] != ' ') return false;
             }
     return true;
+}
+void removeLine(){
+    int j;
+    for (int i = H-2; i >0 ; i-- ){
+        for (j = 0; j < W-1 ; j++)
+            if (board[i][j] == ' ') break;
+        if (j == W-1){
+            for (int ii = i; ii >0 ; ii-- )
+                for (int j = 0; j < W-1 ; j++ ) board[ii][j] = board[ii-1][j];
+            i++;
+            draw();
+            _sleep(200);
+        }
+    }
 }
 int main()
 {
