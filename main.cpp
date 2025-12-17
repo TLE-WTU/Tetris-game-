@@ -1,163 +1,180 @@
 #include <iostream>
 #include <conio.h>
 #include <windows.h>
+#include <time.h> // Cần thêm để sử dụng srand/time
 using namespace std;
+
 #define H 20
 #define W 15
-char board[H][W] = {};
-char blocks[][4][4] = {
-        {{' ','I',' ',' '},
-         {' ','I',' ',' '},
-         {' ','I',' ',' '},
-         {' ','I',' ',' '}},
-        {{' ','I',' ',' '},
-         {' ','I',' ',' '},
-         {' ','I',' ',' '},
-         {' ','I',' ',' '}},
-        {{' ',' ',' ',' '},
-         {' ','O','O',' '},
-         {' ','O','O',' '},
-         {' ',' ',' ',' '}},
-        {{' ',' ',' ',' '},
-         {' ','O','O',' '},
-         {' ','O','O',' '},
-         {' ',' ',' ',' '}},
-        {{' ',' ',' ',' '},
-         {' ','O','O',' '},
-         {' ','O','O',' '},
-         {' ',' ',' ',' '}},
-        {{' ',' ',' ',' '},
-         {' ','O','O',' '},
-         {' ','O','O',' '},
-         {' ',' ',' ',' '}},
-        {{' ',' ',' ',' '},
-         {' ','O','O',' '},
-         {' ','O','O',' '},
-         {' ',' ',' ',' '}},
-        {{' ',' ',' ',' '},
-         {' ','O','O',' '},
-         {' ','O','O',' '},
-         {' ',' ',' ',' '}},
-        {{' ',' ',' ',' '},
-         {' ','O','O',' '},
-         {' ','O','O',' '},
-         {' ',' ',' ',' '}},
-        {{' ',' ',' ',' '},
-         {'I','I','I','I'},
-         {' ',' ',' ',' '},
-         {' ',' ',' ',' '}},
-        {{' ',' ',' ',' '},
-         {' ','O','O',' '},
-         {' ','O','O',' '},
-         {' ',' ',' ',' '}},
-        {{' ',' ',' ',' '},
-         {' ','T',' ',' '},
-         {'T','T','T',' '},
-         {' ',' ',' ',' '}},
-        {{' ',' ',' ',' '},
-         {' ','S','S',' '},
-         {'S','S',' ',' '},
-         {' ',' ',' ',' '}},
-        {{' ',' ',' ',' '},
-         {'Z','Z',' ',' '},
-         {' ','Z','Z',' '},
-         {' ',' ',' ',' '}},
-        {{' ',' ',' ',' '},
-         {'J',' ',' ',' '},
-         {'J','J','J',' '},
-         {' ',' ',' ',' '}},
-        {{' ',' ',' ',' '},
-         {' ',' ','L',' '},
-         {'L','L','L',' '},
-         {' ',' ',' ',' '}}
+
+// 1. Cải tổ CTDL: [7 Loại Khối] [4 Trạng thái Xoay] [4 Hàng] [4 Cột]
+// Đã định nghĩa 4 trạng thái cho 7 khối chuẩn (I, J, L, O, S, Z, T)
+char blocks[7][4][4][4] = {
+    // --- KHỐI I (Màu '1') ---
+    {
+        // 0 độ
+        {{' ',' ',' ',' '}, {'1','1','1','1'}, {' ',' ',' ',' '}, {' ',' ',' ',' '}},
+        // 90 độ
+        {{' ',' ','1',' '}, {' ',' ','1',' '}, {' ',' ','1',' '}, {' ',' ','1',' '}},
+        // 180 độ
+        {{' ',' ',' ',' '}, {' ',' ',' ',' '}, {'1','1','1','1'}, {' ',' ',' ',' '}},
+        // 270 độ
+        {{' ','1',' ',' '}, {' ','1',' ',' '}, {' ','1',' ',' '}, {' ','1',' ',' '}}
+    },
+    // --- KHỐI J (Màu '2') ---
+    {
+        // 0 độ
+        {{'2',' ',' ',' '}, {'2','2','2',' '}, {' ',' ',' ',' '}, {' ',' ',' ',' '}},
+        // 90 độ
+        {{' ','2','2',' '}, {' ','2',' ',' '}, {' ','2',' ',' '}, {' ',' ',' ',' '}},
+        // 180 độ
+        {{' ',' ',' ',' '}, {'2','2','2',' '}, {' ',' ','2',' '}, {' ',' ',' ',' '}},
+        // 270 độ
+        {{' ','2',' ',' '}, {' ','2',' ',' '}, {'2','2',' ',' '}, {' ',' ',' ',' '}}
+    },
+    // --- KHỐI L (Màu '3') ---
+    {
+        // 0 độ
+        {{' ',' ','3',' '}, {'3','3','3',' '}, {' ',' ',' ',' '}, {' ',' ',' ',' '}},
+        // 90 độ
+        {{' ','3',' ',' '}, {' ','3',' ',' '}, {' ','3','3',' '}, {' ',' ',' ',' '}},
+        // 180 độ
+        {{' ',' ',' ',' '}, {'3','3','3',' '}, {'3',' ',' ',' '}, {' ',' ',' ',' '}},
+        // 270 độ
+        {{'3','3',' ',' '}, {' ','3',' ',' '}, {' ','3',' ',' '}, {' ',' ',' ',' '}}
+    },
+    // --- KHỐI O (Màu '4') - Không cần xoay ---
+    {
+        // 0, 90, 180, 270 độ (Tất cả giống nhau)
+        {{' ',' ',' ',' '}, {' ','4','4',' '}, {' ','4','4',' '}, {' ',' ',' ',' '}},
+        {{' ',' ',' ',' '}, {' ','4','4',' '}, {' ','4','4',' '}, {' ',' ',' ',' '}},
+        {{' ',' ',' ',' '}, {' ','4','4',' '}, {' ','4','4',' '}, {' ',' ',' ',' '}},
+        {{' ',' ',' ',' '}, {' ','4','4',' '}, {' ','4','4',' '}, {' ',' ',' ',' '}}
+    },
+    // --- KHỐI S (Màu '5') ---
+    {
+        // 0 độ
+        {{' ',' ',' ',' '}, {' ','5','5',' '}, {'5','5',' ',' '}, {' ',' ',' ',' '}},
+        // 90 độ
+        {{'5',' ',' ',' '}, {'5','5',' ',' '}, {' ','5',' ',' '}, {' ',' ',' ',' '}},
+        // 180 độ
+        {{' ',' ',' ',' '}, {' ','5','5',' '}, {'5','5',' ',' '}, {' ',' ',' ',' '}},
+        // 270 độ
+        {{'5',' ',' ',' '}, {'5','5',' ',' '}, {' ','5',' ',' '}, {' ',' ',' ',' '}}
+    },
+    // --- KHỐI Z (Màu '6') ---
+    {
+        // 0 độ
+        {{' ',' ',' ',' '}, {'6','6',' ',' '}, {' ','6','6',' '}, {' ',' ',' ',' '}},
+        // 90 độ
+        {{' ','6',' ',' '}, {'6','6',' ',' '}, {'6',' ',' ',' '}, {' ',' ',' ',' '}},
+        // 180 độ
+        {{' ',' ',' ',' '}, {'6','6',' ',' '}, {' ','6','6',' '}, {' ',' ',' ',' '}},
+        // 270 độ
+        {{' ','6',' ',' '}, {'6','6',' ',' '}, {'6',' ',' ',' '}, {' ',' ',' ',' '}}
+    },
+    // --- KHỐI T (Màu '7') ---
+    {
+        // 0 độ
+        {{' ',' ',' ',' '}, {' ','7',' ',' '}, {'7','7','7',' '}, {' ',' ',' ',' '}},
+        // 90 độ
+        {{' ','7',' ',' '}, {' ','7','7',' '}, {' ','7',' ',' '}, {' ',' ',' ',' '}},
+        // 180 độ
+        {{' ',' ',' ',' '}, {'7','7','7',' '}, {' ','7',' ',' '}, {' ',' ',' ',' '}},
+        // 270 độ
+        {{' ','7',' ',' '}, {'7','7',' ',' '}, {' ','7',' ',' '}, {' ',' ',' ',' '}}
+    }
 };
 
-int x = 4, y = 0, b = 1;
-void gotoxy(int x, int y) {
-    COORD c = { x, y };
-    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), c);
+// 3. Thêm biến r (rotation state)
+int x=4, y=0, b=0, r=0; // Đã đổi b=1 thành b=0 để rand() % 7 hoạt động đúng
+
+// Giữ nguyên hàm gotoxy
+
+// 4. Cập nhật các hàm để dùng biến r
+void boardDelBlock(){
+    for (int i = 0 ; i < 4 ; i++)
+        for (int j = 0 ; j < 4 ; j++)
+            if (blocks[b][r][i][j] != ' ' && y+i < H) // Dùng blocks[b][r][i][j]
+                board[y+i][x+j] = ' ';
 }
-void boardDelBlock() {
-    for (int i = 0; i < 4; i++)
-        for (int j = 0; j < 4; j++)
-            if (blocks[b][i][j] != ' ' && y + j < H)
-                board[y + i][x + j] = ' ';
+void block2Board(){
+    for (int i = 0 ; i < 4 ; i++)
+        for (int j = 0 ; j < 4 ; j++)
+            if (blocks[b][r][i][j] != ' ' ) // Dùng blocks[b][r][i][j]
+                board[y+i][x+j] = blocks[b][r][i][j];
 }
-void block2Board() {
-    for (int i = 0; i < 4; i++)
-        for (int j = 0; j < 4; j++)
-            if (blocks[b][i][j] != ' ')
-                board[y + i][x + j] = blocks[b][i][j];
-}
-void initBoard() {
-    for (int i = 0; i < H; i++)
-        for (int j = 0; j < W; j++)
-            if ((i == H - 1) || (j == 0) || (j == W - 1)) board[i][j] = '#';
-            else board[i][j] = ' ';
-}
-void draw() {
-    gotoxy(0, 0);
-    for (int i = 0; i < H; i++) {
-        for (int j = 0; j < W; j++) {
-            if (board[i][j] == '#') {
-                cout << "##"; 
-            }
-            else if (board[i][j] == ' ') {
-                cout << "  "; 
-            }
-            else {
-                cout << "[]"; 
-            }
-        }
-        cout << endl;
-    }
-}
-bool canMove(int dx, int dy) {
-    for (int i = 0; i < 4; i++)
-        for (int j = 0; j < 4; j++)
-            if (blocks[b][i][j] != ' ') {
-                int tx = x + j + dx;
-                int ty = y + i + dy;
-                if (tx < 1 || tx >= W - 1 || ty >= H - 1) return false;
-                if (board[ty][tx] != ' ') return false;
+
+// Giữ nguyên initBoard, draw, removeLine
+
+// Hàm kiểm tra va chạm MỚI cho chức năng Xoay (tái sử dụng logic cũ)
+bool checkCollision(int block_index, int rotation_state, int px, int py){
+    // Lấy hình dạng 4x4 của khối tại trạng thái xoay đã cho
+    char (*shape)[4] = blocks[block_index][rotation_state];
+    
+    for (int i = 0 ; i < 4 ; i++)
+        for (int j = 0 ; j < 4 ; j++)
+            if (shape[i][j] != ' '){
+                int tx = px + j;
+                int ty = py + i;
+                
+                // Kiểm tra va chạm Tường, Sàn
+                if ( tx<1 || tx >= W-1 || ty >= H-1) return false;
+                
+                // Kiểm tra va chạm với khối đã rơi
+                if ( board[ty][tx] != ' ') return false;
             }
     return true;
 }
-void removeLine() {
-    int j;
-    for (int i = H - 2; i > 0; i--) {
-        for (j = 0; j < W - 1; j++)
-            if (board[i][j] == ' ') break;
-        if (j == W - 1) {
-            for (int ii = i; ii > 0; ii--)
-                for (int j = 0; j < W - 1; j++) board[ii][j] = board[ii - 1][j];
-            i++;
-            draw();
-            _sleep(200);
-        }
-    }
+
+// Cập nhật hàm canMove để gọi checkCollision
+bool canMove(int dx, int dy){
+    int next_x = x + dx;
+    int next_y = y + dy;
+    // Kiểm tra va chạm của hình dạng hiện tại (r) tại vị trí mới (next_x, next_y)
+    return checkCollision(b, r, next_x, next_y);
 }
 
+// 5. Triển khai hàm Xoay
+bool tryRotate() {
+    // Tính toán trạng thái xoay tiếp theo (xoay xuôi chiều kim đồng hồ)
+    int next_r = (r + 1) % 4;
+    
+    // Kiểm tra va chạm với trạng thái xoay MỚI (next_r) tại vị trí HIỆN TẠI (x, y)
+    if (checkCollision(b, next_r, x, y)) {
+        r = next_r; // Xoay hợp lệ: Cập nhật trạng thái xoay
+        return true;
+    }
+    
+    // *Lưu ý: Logic Wall Kick (SRS) cần thêm ở đây nếu muốn hoàn hảo.
+    // Tạm thời, nếu va chạm thì không xoay.
+    return false;
+}
+
+// --- HÀM MAIN VÀ XỬ LÝ ĐẦU VÀO ---
 int main()
 {
     srand(time(0));
-    b = rand() % 7;
+    b = rand() % 7; // Khối ban đầu
     system("cls");
     initBoard();
-    while (1) {
+    while (1){
         boardDelBlock();
-        if (kbhit()) {
-            char c = getch();
-            if (c == 'a' && canMove(-1, 0)) x--;
-            if (c == 'd' && canMove(1, 0)) x++;
-            if (c == 'x' && canMove(0, 1))  y++;
-            if (c == 'q') break;
+        if (kbhit()){
+            char c = getch();   
+            if (c=='a' && canMove(-1,0)) x--;
+            if (c=='d' && canMove(1,0) ) x++;
+            if (c=='x' && canMove(0,1))  y++;
+            if (c=='w'){ // Thêm phím xoay 'w'
+                 tryRotate(); // Hàm này đã có boardDelBlock()
+            }
+            if (c=='q') break;
         }
-        if (canMove(0, 1)) y++;
+        if (canMove(0,1)) y++;
         else {
             block2Board();
             removeLine();
-            x = 5; y = 0; b = rand() % 7;
+            x = 5; y = 0; b = rand() % 7; r = 0; // Reset trạng thái xoay khi khối mới xuất hiện
         }
         block2Board();
         draw();
