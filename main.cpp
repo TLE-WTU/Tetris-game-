@@ -138,13 +138,9 @@ bool canRotate(char newBlock[4][4]) {
 }
 void rotateBlock() {
     char temp[4][4];
-
-    // tạo block xoay 90 độ sang phải
     for (int i = 0; i < 4; i++)
         for (int j = 0; j < 4; j++)
             temp[i][j] = blocks[b][3 - j][i];
-
-    // kiểm tra hợp lệ thì mới xoay
     if (canRotate(temp)) {
         for (int i = 0; i < 4; i++)
             for (int j = 0; j < 4; j++)
@@ -195,4 +191,5 @@ int main()
     }
     return 0;
 }
+
 
