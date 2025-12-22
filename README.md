@@ -1,8 +1,0 @@
-Kỹ năng nghề nghiệp - SS004.Q12
-TETRIS GAME BY GROUP TRY HARD 
-WITH MEMBER:
-Lê Mạnh Tiến - 24521767
-Nguyễn Minh Quân - 24521442
-Cao Minh Thuận – 24521734
-Nguyễn Minh Tiến – 24521774
-Trần Xuân Tiến - 24521781
