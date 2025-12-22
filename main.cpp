@@ -1,5 +1,3 @@
-
-
 #include <iostream>
 #include <conio.h>
 #include <windows.h>
@@ -125,6 +123,35 @@ bool canMove(int dx, int dy) {
             }
     return true;
 }
+bool canRotate(char newBlock[4][4]) {
+    for (int i = 0; i < 4; i++)
+        for (int j = 0; j < 4; j++)
+            if (newBlock[i][j] != ' ') {
+                int tx = x + j;
+                int ty = y + i;
+                if (tx < 1 || tx >= W - 1 || ty < 0 || ty >= H - 1)
+                    return false;
+                if (board[ty][tx] != ' ')
+                    return false;
+            }
+    return true;
+}
+void rotateBlock() {
+    char temp[4][4];
+
+    // tạo block xoay 90 độ sang phải
+    for (int i = 0; i < 4; i++)
+        for (int j = 0; j < 4; j++)
+            temp[i][j] = blocks[b][3 - j][i];
+
+    // kiểm tra hợp lệ thì mới xoay
+    if (canRotate(temp)) {
+        for (int i = 0; i < 4; i++)
+            for (int j = 0; j < 4; j++)
+                blocks[b][i][j] = temp[i][j];
+    }
+}
+
 void removeLine() {
     int j;
     for (int i = H - 2; i > 0; i--) {
@@ -153,6 +180,7 @@ int main()
             if (c == 'a' && canMove(-1, 0)) x--;
             if (c == 'd' && canMove(1, 0)) x++;
             if (c == 'x' && canMove(0, 1))  y++;
+            if (c == 'w') rotateBlock();   
             if (c == 'q') break;
         }
         if (canMove(0, 1)) y++;
@@ -167,3 +195,4 @@ int main()
     }
     return 0;
 }
+
