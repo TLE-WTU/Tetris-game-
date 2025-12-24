@@ -124,12 +124,12 @@ bool canMove(int dx, int dy) {
             }
     return true;
 }
-bool canRotate(char newBlock[4][4]) {
+bool canRotate(char newBlock[4][4], int nx, int ny) {
     for (int i = 0; i < 4; i++)
         for (int j = 0; j < 4; j++)
             if (newBlock[i][j] != ' ') {
-                int tx = x + j;
-                int ty = y + i;
+                int tx = nx + j;
+                int ty = ny + i;
                 if (tx < 1 || tx >= W - 1 || ty < 0 || ty >= H - 1)
                     return false;
                 if (board[ty][tx] != ' ')
@@ -142,13 +142,19 @@ void rotateBlock() {
     for (int i = 0; i < 4; i++)
         for (int j = 0; j < 4; j++)
             temp[i][j] = blocks[b][3 - j][i];
-    if (canRotate(temp)) {
-        for (int i = 0; i < 4; i++)
-            for (int j = 0; j < 4; j++)
-                blocks[b][i][j] = temp[i][j];
+    int kicks[] = {0, -1, 1, -2, 2};
+    for (int k = 0; k < 5; k++) {
+        int nx = x + kicks[k];
+        int ny = y;
+        if (canRotate(temp, nx, ny)) {
+            x = nx;   
+            for (int i = 0; i < 4; i++)
+                for (int j = 0; j < 4; j++)
+                    blocks[b][i][j] = temp[i][j];
+            return;
+        }
     }
 }
-
 void removeLine() {
     int j;
     for (int i = H - 2; i > 0; i--) {
@@ -172,27 +178,34 @@ int main()
     b = rand() % 7;
     system("cls");
     initBoard();
+
     while (1) {
         boardDelBlock();
         if (kbhit()) {
             char c = getch();
             if (c == 'a' && canMove(-1, 0)) x--;
-            if (c == 'd' && canMove(1, 0)) x++;
-            if (c == 'x' && canMove(0, 1))  y++;
-            if (c == 'w') rotateBlock();   
-            if (c == 'q') break;
+            else if (c == 'd' && canMove(1, 0)) x++;
+            else if (c == 'x' && canMove(0, 1)) y++;
+            else if (c == 'w') rotateBlock();   
+            else if (c == 'q') break;
         }
-        if (canMove(0, 1)) y++;
+        if (canMove(0, 1)) {
+            y++;
+        }
         else {
             block2Board();
             removeLine();
-            x = 5; y = 0; b = rand() % 7;
+            x = 5;
+            y = 0;
+            b = rand() % 7;
         }
         block2Board();
         draw();
+
         _sleep(speed);
     }
     return 0;
 }
+
 
 
