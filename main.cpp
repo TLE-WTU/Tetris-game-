@@ -46,7 +46,6 @@ void clearScreen() {
 }
 
 void drawBox(int left, int top, int width, int height) {
-    // simple border box using ASCII
     for (int i = 0; i < width; i++) {
         gotoxy(left + i, top);              cout << char(205);
         gotoxy(left + i, top + height - 1); cout << char(205);
@@ -69,28 +68,55 @@ void initBoard() {
             else board[i][j] = ' ';
 }
 
+int originX = 0, originY = 0;
+const int HUD_MARGIN = 6;     
+const int HUD_WIDTH  = 26;    
+
+void updateLayout()
+{
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
+
+    int consoleW = csbi.srWindow.Right  - csbi.srWindow.Left + 1;
+    int consoleH = csbi.srWindow.Bottom - csbi.srWindow.Top  + 1;
+
+    int boardWChars = W * 2;                  
+    int totalW = boardWChars + HUD_MARGIN + HUD_WIDTH;
+    int totalH = H;                           
+
+    originX = (consoleW - totalW) / 2;
+    originY = (consoleH - totalH) / 2;
+
+    if (originX < 0) originX = 0;
+    if (originY < 0) originY = 0;
+}
+
 void draw() {
-    gotoxy(0, 0);
+    updateLayout();
+
     for (int i = 0; i < H; i++) {
+        gotoxy(originX, originY + i);
         for (int j = 0; j < W; j++) {
             if (board[i][j] == '#') cout << "##";
             else if (board[i][j] == ' ') cout << "  ";
             else cout << "[]";
         }
-        cout << "\n";
     }
 }
 
 
 void drawHUD() {
-    int hudX = W * 2 + 3; // vì mỗi ô in 2 ký tự
-    gotoxy(hudX, 1);  cout << "SCORE : " << score << "    ";
-    gotoxy(hudX, 2);  cout << "LINES : " << totalLines << "    ";
-    gotoxy(hudX, 3);  cout << "LEVEL : " << level << "    ";
-    gotoxy(hudX, 5);  cout << "A/D : Move";
-    gotoxy(hudX, 6);  cout << "W   : Rotate";
-    gotoxy(hudX, 7);  cout << "X   : Soft drop";
-    gotoxy(hudX, 8);  cout << "Q   : Quit";
+    int hudX = originX + (W * 2) + HUD_MARGIN;
+    int hudY = originY;
+
+    gotoxy(hudX, hudY + 1);  cout << "SCORE : " << score << "    ";
+    gotoxy(hudX, hudY + 2);  cout << "LINES : " << totalLines << "    ";
+    gotoxy(hudX, hudY + 3);  cout << "LEVEL : " << level << "    ";
+
+    gotoxy(hudX, hudY + 5);  cout << "A/D : Move       ";
+    gotoxy(hudX, hudY + 6);  cout << "W   : Rotate     ";
+    gotoxy(hudX, hudY + 7);  cout << "X   : Soft drop  ";
+    gotoxy(hudX, hudY + 8);  cout << "Q   : Quit       ";
 }
 
 
@@ -551,3 +577,4 @@ int main() {
     if (cur) delete cur;
     return 0;
 }
+
