@@ -3,11 +3,13 @@
 #include <windows.h>
 #include <ctime>
 #include <cstdlib>
+#include <string>
 using namespace std;
 
 #define H 20
 #define W 15
 
+// ===================== Global =====================
 char board[H][W];
 
 int x = 5, y = 0;
@@ -15,13 +17,51 @@ int speed = 200;
 int score = 0;
 int totalLines = 0;
 int level = 1;
+bool running = true;
 
-
+// ===================== Console helpers =====================
 void gotoxy(int x, int y) {
     COORD c = { (SHORT)x, (SHORT)y };
     SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), c);
 }
 
+void setTextColor(WORD color) {
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
+}
+
+void hideCursor(bool hide = true) {
+    HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_CURSOR_INFO info;
+    GetConsoleCursorInfo(h, &info);
+    info.bVisible = !hide;
+    SetConsoleCursorInfo(h, &info);
+}
+
+void setConsoleTitle() {
+    SetConsoleTitleA("TETRIS - Console Edition");
+}
+
+void clearScreen() {
+    system("cls");
+}
+
+void drawBox(int left, int top, int width, int height) {
+    // simple border box using ASCII
+    for (int i = 0; i < width; i++) {
+        gotoxy(left + i, top);              cout << char(205);
+        gotoxy(left + i, top + height - 1); cout << char(205);
+    }
+    for (int i = 0; i < height; i++) {
+        gotoxy(left, top + i);              cout << char(186);
+        gotoxy(left + width - 1, top + i);  cout << char(186);
+    }
+    gotoxy(left, top);                     cout << char(201);
+    gotoxy(left + width - 1, top);         cout << char(187);
+    gotoxy(left, top + height - 1);        cout << char(200);
+    gotoxy(left + width - 1, top + height - 1); cout << char(188);
+}
+
+// ===================== Board =====================
 void initBoard() {
     for (int i = 0; i < H; i++)
         for (int j = 0; j < W; j++)
@@ -41,8 +81,9 @@ void draw() {
     }
 }
 
+
 void drawHUD() {
-    int hudX = W * 2 + 3; 
+    int hudX = W * 2 + 3; // vì mỗi ô in 2 ký tự
     gotoxy(hudX, 1);  cout << "SCORE : " << score << "    ";
     gotoxy(hudX, 2);  cout << "LINES : " << totalLines << "    ";
     gotoxy(hudX, 3);  cout << "LEVEL : " << level << "    ";
@@ -63,6 +104,7 @@ int removeLine() {
 
         if (j == W - 1) {
             cleared++;
+
             for (int ii = i; ii > 1; ii--)
                 for (int jj = 1; jj < W - 1; jj++)
                     board[ii][jj] = board[ii - 1][jj];
@@ -77,12 +119,10 @@ int removeLine() {
             Sleep(200);
         }
     }
-
     return cleared;
 }
 
-// ===================== OOP Piece + Polymorphism =====================
-
+// ===================== OOP Pieces =====================
 class Piece {
 protected:
     char shape[4][4];
@@ -222,12 +262,10 @@ public:
     char tileChar() const override { return 'L'; }
 };
 
-// ===================== Game helpers working with Piece* =====================
-
+// ===================== Game helpers =====================
 Piece* cur = nullptr;
 
-bool canPlaceAt(const Piece* p, int nx, int ny) 
-{
+bool canPlaceAt(const Piece* p, int nx, int ny) {
     const char (*s)[4] = p->getShape();
     for (int i = 0; i < 4; i++)
         for (int j = 0; j < 4; j++)
@@ -240,8 +278,7 @@ bool canPlaceAt(const Piece* p, int nx, int ny)
     return true;
 }
 
-void delPieceFromBoard() 
-{
+void delPieceFromBoard() {
     const char (*s)[4] = cur->getShape();
     for (int i = 0; i < 4; i++)
         for (int j = 0; j < 4; j++)
@@ -253,8 +290,7 @@ void delPieceFromBoard()
             }
 }
 
-void putPieceToBoard() 
-{
+void putPieceToBoard() {
     const char (*s)[4] = cur->getShape();
     for (int i = 0; i < 4; i++)
         for (int j = 0; j < 4; j++)
@@ -266,9 +302,7 @@ bool canMove(int dx, int dy) {
     return canPlaceAt(cur, x + dx, y + dy);
 }
 
-
-void rotateWithKickCW() 
-{
+void rotateWithKickCW() {
     char backup[4][4];
     cur->copyShapeTo(backup);
 
@@ -283,13 +317,10 @@ void rotateWithKickCW()
             return;
         }
     }
-
-
     cur->loadFrom(backup);
 }
 
-Piece* randomPiece() 
-{
+Piece* randomPiece() {
     int r = rand() % 7;
     switch (r) {
         case 0: return new IPiece();
@@ -302,26 +333,160 @@ Piece* randomPiece()
     }
 }
 
-// ===================== main =====================
+// ===================== Menu UI =====================
+void printLogo(int left, int top) {
+    setTextColor(11);
+    gotoxy(left, top + 0); cout << " _______ _______ _______ _______ _______ ";
+    gotoxy(left, top + 1); cout << "|__   __|__   __|__   __|__   __|__   __|";
+    gotoxy(left, top + 2); cout << "   | |     | |     | |     | |     | |   ";
+    gotoxy(left, top + 3); cout << "   | |     | |     | |     | |     | |   ";
+    gotoxy(left, top + 4); cout << "   |_|     |_|     |_|     |_|     |_|   ";
+    gotoxy(left, top + 5); cout << "           T E T R I S   (Console)       ";
+    setTextColor(7);
+}
 
-int main() {
-    srand((unsigned)time(nullptr));
-    system("cls");
+
+void printCentered(int y, const string& text, int width) {
+    int x = (width - (int)text.size()) / 2;
+    if (x < 0) x = 0;
+    gotoxy(x, y);
+    cout << text;
+}
+
+void drawMenu(int selected) {
+    clearScreen();
+    hideCursor(true);
+
+    int consoleWidth = 90;
+    int boxLeft = 8, boxTop = 2, boxW = 74, boxH = 22;
+
+    drawBox(boxLeft, boxTop, boxW, boxH);
+
+    printLogo(boxLeft + 8, boxTop + 2);
+
+    gotoxy(boxLeft + 3, boxTop + 10);
+    cout << "Console Edition  |  Controls: A/D/W/X, Q to quit";
+
+    string items[] = {"Start Game", "How to Play", "Exit"};
+    int n = 3;
+
+    int menuX = boxLeft + 26;
+    int menuY = boxTop + 13;
+
+    for (int i = 0; i < n; i++) {
+        gotoxy(menuX, menuY + i * 2);
+        if (i == selected) {
+            setTextColor(240); 
+            cout << "  " << items[i] << "  ";
+            setTextColor(7);
+        } else {
+            cout << "  " << items[i] << "  ";
+        }
+    }
+
+    gotoxy(boxLeft + 3, boxTop + boxH - 2);
+    cout << "Use UP/DOWN or W/S to navigate, ENTER to select, ESC to quit.";
+}
+
+void showHowToPlay() {
+    clearScreen();
+    hideCursor(true);
+
+    int boxLeft = 8, boxTop = 2, boxW = 74, boxH = 22;
+    drawBox(boxLeft, boxTop, boxW, boxH);
+
+    setTextColor(11);
+    gotoxy(boxLeft + 3, boxTop + 2);
+    cout << "HOW TO PLAY";
+    setTextColor(7);
+
+    gotoxy(boxLeft + 3, boxTop + 5);
+    cout << "- A / D : Move left / right";
+    gotoxy(boxLeft + 3, boxTop + 7);
+    cout << "- W     : Rotate clockwise (with simple wall-kick)";
+    gotoxy(boxLeft + 3, boxTop + 9);
+    cout << "- X     : Soft drop (move down faster)";
+    gotoxy(boxLeft + 3, boxTop + 11);
+    cout << "- Q     : Quit game";
+
+    gotoxy(boxLeft + 3, boxTop + 14);
+    cout << "Scoring:";
+    gotoxy(boxLeft + 5, boxTop + 16);
+    cout << "1 line  = 100 * level";
+    gotoxy(boxLeft + 5, boxTop + 17);
+    cout << "2 lines = 300 * level";
+    gotoxy(boxLeft + 5, boxTop + 18);
+    cout << "3 lines = 500 * level";
+    gotoxy(boxLeft + 5, boxTop + 19);
+    cout << "4 lines = 800 * level";
+
+    gotoxy(boxLeft + 3, boxTop + boxH - 2);
+    cout << "Press any key to go back...";
+    getch();
+}
+
+int runStartMenu() {
+    int selected = 0;
+
+    while (true) {
+        drawMenu(selected);
+
+        int key = getch();
+        if (key == 27) return 2; // ESC -> Exit
+
+        if (key == 224) {
+            int k2 = getch();
+            if (k2 == 72) { 
+                selected = (selected - 1 + 3) % 3;
+            } else if (k2 == 80) { // DOWN
+                selected = (selected + 1) % 3;
+            }
+        } else {
+            if (key == 'w' || key == 'W') selected = (selected - 1 + 3) % 3;
+            else if (key == 's' || key == 'S') selected = (selected + 1) % 3;
+            else if (key == 13) { // ENTER
+                return selected;
+            }
+        }
+    }
+}
+
+// ===================== Game loop (wrapped) =====================
+void resetGameState() {
+    x = 5; y = 0;
+    speed = 200;
+    score = 0;
+    totalLines = 0;
+    level = 1;
     initBoard();
 
+    if (cur) { delete cur; cur = nullptr; }
     cur = randomPiece();
+}
 
-    while (1) {
+void gameOverScreen() {
+    int hudX = W * 2 + 3;
+    gotoxy(hudX, 11); cout << "====================";
+    gotoxy(hudX, 12); cout << "      GAME OVER     ";
+    gotoxy(hudX, 13); cout << "====================";
+    gotoxy(hudX, 15); cout << "Press any key...";
+    getch();
+}
+
+void runGame() {
+    clearScreen();
+    resetGameState();
+
+    while (true) {
         delPieceFromBoard();
 
         if (kbhit()) {
             char c = getch();
-            if (c == 'a' && canMove(-1, 0)) x--;
-            else if (c == 'd' && canMove(1, 0)) x++;
-            else if (c == 'x' && canMove(0, 1)) y++;
-            else if (c == 'w') rotateWithKickCW();
-            else if (c == 'q')
-            {
+            if ((c == 'a' || c == 'A') && canMove(-1, 0)) x--;
+            else if ((c == 'd' || c == 'D') && canMove(1, 0)) x++;
+            else if ((c == 'x' || c == 'X') && canMove(0, 1)) y++;
+            else if (c == 'w' || c == 'W') rotateWithKickCW();
+            else if (c == 'q' || c == 'Q') {
                 gotoxy(0, H + 1);
                 break;
             }
@@ -331,8 +496,9 @@ int main() {
             y++;
         } else {
             putPieceToBoard();
-            int lines = removeLine();    
-            if (lines > 0){
+
+            int lines = removeLine();
+            if (lines > 0) {
                 totalLines += lines;
 
                 if (lines == 1) score += 100 * level;
@@ -346,10 +512,11 @@ int main() {
             delete cur;
             cur = randomPiece();
             x = 5; y = 0;
+
             if (!canPlaceAt(cur, x, y)) {
                 draw();
-                gotoxy(0, H + 1);
-                cout << "GAME OVER!\n";
+                drawHUD();
+                gameOverScreen();
                 break;
             }
         }
@@ -358,8 +525,29 @@ int main() {
         draw();
         drawHUD();
         Sleep(speed);
-
     }
-    delete cur;
+}
+
+// ===================== main =====================
+int main() {
+    srand((unsigned)time(nullptr));
+    setConsoleTitle();
+    hideCursor(true);
+
+    while (true) {
+        int choice = runStartMenu();
+
+        if (choice == 0) {
+            runGame();
+        } else if (choice == 1) {
+            showHowToPlay();
+        } else {
+            clearScreen();
+            gotoxy(0, 0);
+            break;
+        }
+    }
+
+    if (cur) delete cur;
     return 0;
 }
